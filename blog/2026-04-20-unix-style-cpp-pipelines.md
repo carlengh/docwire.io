@@ -207,7 +207,7 @@ struct ParsingChain : ChainElement {
   Continue process(Msg msg, MessageCallbacks cb) override {
     MessageCallbacks lhs_cb{
     // front of lhs → rhs
-                            [&](Msg m) { return rhs.get().process(m, cb); },
+                            [rhs = rhs, cb](Msg m) { return rhs.get().process(m, cb); },
                             // back of lhs → back of chain
                             cb.back};
     return lhs.get().process(msg, lhs_cb);
