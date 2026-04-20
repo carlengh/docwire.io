@@ -278,7 +278,7 @@ One of the hidden benefits of this message-passing architecture is how naturally
 *The actual Docwire implementation of this feature can be found in the Docwire source repository under the `src/parsing_chain.h` and `src/parsing_chain.cpp` files.*
 
 <iframe 
-  src={"https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"}
+  src="https://tally.so/embed/0QjA2Z?alignLeft=1&amp;hideTitle=1&amp;transparentBackground=1&amp;dynamicHeight=1"
   width="100%" 
   height="300" 
   frameBorder="0" 
