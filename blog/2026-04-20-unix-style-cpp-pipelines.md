@@ -112,9 +112,9 @@ struct SimpleParser : ChainElement {
 struct TextFilter : ChainElement {
   bool is_generator() const override { return false; }
   Continue process(Msg msg, MessageCallbacks next) override {
-    if (!dynamic_cast<TextMessage *>(msg.get()))
-      return Continue::No;
-    return next.front(msg);
+    if (dynamic_cast<TextMessage *>(msg.get()) || dynamic_cast<EndMessage *>(msg.get()))
+      return next.front(msg);
+    return Continue::Yes;
   }
 };
 
