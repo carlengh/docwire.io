@@ -124,7 +124,6 @@ struct TextExporter : ChainElement {
     if (auto t = dynamic_cast<TextMessage *>(msg.get()))
       std::cout << "Exported: " << t->text << "\n";
     return Continue::Yes;
-    ;
   }
 };
 ```
