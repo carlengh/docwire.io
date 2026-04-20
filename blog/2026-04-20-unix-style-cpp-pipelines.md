@@ -268,3 +268,23 @@ int main() {
 
   chain->process(std::make_shared<StartMessage>(), root);
 }
+```
+
+## A Note on Concurrency
+
+One of the hidden benefits of this message-passing architecture is how naturally it lends itself to multithreading. Because each node operates independently on the messages it receives, this pattern lays the groundwork to run individual elements on separate threads, passing messages via concurrent, thread-safe queues.
+
+*The actual Docwire implementation of this feature can be found in the Docwire source repository under the `src/parsing_chain.h` and `src/parsing_chain.cpp` files.*
+
+<br/>
+<br/>
+
+<iframe 
+  src="[https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1](https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1)" 
+  width="100%" 
+  height="300" 
+  frameBorder="0" 
+  marginHeight="0" 
+  marginWidth="0" 
+  title="DocWire Engineering Updates">
+</iframe>
