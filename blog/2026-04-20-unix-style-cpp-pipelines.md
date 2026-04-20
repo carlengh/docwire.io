@@ -1,8 +1,9 @@
 ---
 title: Building Unix-Style C++ Processing Pipelines Using the Pipe Operator
-authors: reeshabh
-tags: [c++, pipeline, parsing, sdk]
+tags: ["c++", "pipeline", "parsing", "sdk"]
 ---
+
+**By Reeshabh Choudhary, DocWire.io**
 
 **Summary:** How to build a C++ processing pipeline using the pipe operator (`|`). To build a C++ processing pipeline using the pipe operator, you must define a base chain element class with virtual processing methods and overload the bitwise OR operator to couple these elements together. This object-oriented approach ensures that the output of one processing node seamlessly feeds into the next, closely mimicking the behavior of Unix terminal pipes.
 
@@ -112,9 +113,9 @@ struct SimpleParser : ChainElement {
 struct TextFilter : ChainElement {
   bool is_generator() const override { return false; }
   Continue process(Msg msg, MessageCallbacks next) override {
-    if (dynamic_cast<TextMessage *>(msg.get()) || dynamic_cast<EndMessage *>(msg.get()))
-      return next.front(msg);
-    return Continue::Yes;
+    if (!dynamic_cast<TextMessage *>(msg.get()))
+      return Continue::No;
+    return next.front(msg);
   }
 };
 
@@ -124,6 +125,7 @@ struct TextExporter : ChainElement {
     if (auto t = dynamic_cast<TextMessage *>(msg.get()))
       std::cout << "Exported: " << t->text << "\n";
     return Continue::Yes;
+    ;
   }
 };
 ```
@@ -207,7 +209,7 @@ struct ParsingChain : ChainElement {
   Continue process(Msg msg, MessageCallbacks cb) override {
     MessageCallbacks lhs_cb{
     // front of lhs → rhs
-                            [rhs = rhs, cb](Msg m) { return rhs.get().process(m, cb); },
+                            [&](Msg m) { return rhs.get().process(m, cb); },
                             // back of lhs → back of chain
                             cb.back};
     return lhs.get().process(msg, lhs_cb);
@@ -275,11 +277,10 @@ One of the hidden benefits of this message-passing architecture is how naturally
 
 *The actual Docwire implementation of this feature can be found in the Docwire source repository under the `src/parsing_chain.h` and `src/parsing_chain.cpp` files.*
 
-<br/>
-<br/>
+<br />
 
 <iframe 
-  src="[https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1](https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1)" 
+  src="https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1" 
   width="100%" 
   height="300" 
   frameBorder="0" 
