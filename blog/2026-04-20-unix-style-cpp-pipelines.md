@@ -17,23 +17,15 @@ One aspect of the Docwire SDK is its ability to process documents locally (or ma
 
 ```cpp
 std::filesystem::path("data_processing_definition.doc") | content_type::detector{} | office_formats_parser{} | PlainTextExporter() | out_stream;
-```
 
 In the above pipeline processing, a document is selected, its content type is detected, the required parser is applied, and the text output is exported. Additional steps can be added to the pipeline, for example:
-
-```cpp
 std::filesystem::path("data_processing_definition.doc") | content_type::detector{} | office_formats_parser{} | PlainTextExporter() | local_ai::model_chain_element("Translate to spanish:\n\n") | out_stream;
-```
+With this addition, a local model translates the document's text to Spanish and streams the output. The necessary customizations can be applied such that the output of the previous step acts as an input for the next, precisely how a pipeline chain functions. In software terms, this emulates how the Unix pipe operator | works in the terminal.
 
-With this addition, a local model translates the document's text to Spanish and streams the output. The necessary customizations can be applied such that the output of the previous step acts as an input for the next, precisely how a pipeline chain functions. In software terms, this emulates how the Unix pipe operator `|` works in the terminal.
-
-## Defining Core Entities and Message Types
-
+Defining Core Entities and Message Types
 Before examining the exact implementation, let us establish the intuition for this structure. We are building a processing pipeline. The element to be processed can be of various types, as Docwire supports more than 100 file formats. For brevity, we use a simple example to focus on how the pipe chaining operates.
 
 We start by defining the entity we want to process:
-
-```cpp
 /**
  * A simple Message struct or `class`
  */
@@ -47,19 +39,14 @@ struct TextMessage : Message {
   TextMessage(std::string t) : text(std::move(t)) {}
 };
 struct EndMessage : Message {};
-```
-
 We have defined a base entity and various types of such entities. Based on the types, the parsing steps will decide how to act.
 
-> **Note:** In C++, classes are equivalent to structs aside from default visibility. The struct approach is used here to keep the implementation minimal.
+Note: In C++, classes are equivalent to structs aside from default visibility. The struct approach is used here to keep the implementation minimal.
 
-## Structuring Pipeline Callbacks and Chain Elements
-
+Structuring Pipeline Callbacks and Chain Elements
 The intended behavior is as follows: a message entity is passed around. At each stage of processing in the pipeline, based on the processing result, the program decides what output to forward to the next step, or whether to propagate something upstream (such as errors or cancellations).
 
 First, we define the structure to capture these behaviors, and then we define the structure for chain elements. This base entity ensures the necessary behaviors are inherited by different chain elements while parsing.
-
-```cpp
 // Whether to continue or not
 enum class Continue { Yes, No };
 
@@ -84,13 +71,8 @@ struct ChainElement {
   // Destructor
   virtual ~ChainElement() = default;
 };
-```
-
-## Creating Custom Parsing, Filtering, and Exporting Nodes
-
+Creating Custom Parsing, Filtering, and Exporting Nodes
 Next, we define different parsing chain elements:
-
-```cpp
 struct SimpleParser : ChainElement {
 
   bool is_generator() const override { return true; }
@@ -126,17 +108,11 @@ struct TextExporter : ChainElement {
     ;
   }
 };
-```
+Note: TextExporter is a leaf node in this chain; it does not propagate the message forward. It acts as the final step of the pipeline processing.
 
-> **Note:** `TextExporter` is a leaf node in this chain; it does not propagate the message forward. It acts as the final step of the pipeline processing.
-> 
-> **Developer Note:** For the sake of brevity and clarity, this example relies on `dynamic_cast` for message type checking. In a highly optimized production environment, this could be refactored using `std::variant` and `std::visit`, or a custom type-tagging system to avoid the overhead of Run-Time Type Information (RTTI).
-
-## Managing Object Ownership with a Reference Template
-
-One remaining requirement is how to chain the pipeline through the `|` operator, specifically whether we use references of elements in the processing chain or take ownership of them.
-
-```cpp
+Developer Note: For the sake of brevity and clarity, this example relies on dynamic_cast for message type checking. In a highly optimized production environment, this could be refactored using std::variant and std::visit, or a custom type-tagging system to avoid the overhead of Run-Time Type Information (RTTI).
+Managing Object Ownership with a Reference Template
+One remaining requirement is how to chain the pipeline through the | operator, specifically whether we use references of elements in the processing chain or take ownership of them.
 /**
  * A Class template to own or borrow references
  */
@@ -156,33 +132,24 @@ public:
   T &get() { return *ref; }
   const T &get() const { return *ref; }
 };
-```
-
 In C++, objects can come from different places:
 
-**Example 1: Owned Objects**
-```cpp
+Example 1: Owned Objects
 auto parser = std::make_shared<SimpleParser>();
-```
 This means the program is responsible for keeping the object alive. Multiple parts of the program can safely share it.
 
-**Example 2: Borrowed Objects**
-```cpp
+Example 2: Borrowed Objects
 SimpleParser parser;
-```
 The object lives elsewhere, and the pipeline is simply borrowing it.
 
-Our pipeline must support both cases. The helper class template `ref_or_owned` manages objects regardless of whether they are borrowed or owned. For a borrowed object, it stores a reference, and for an owned object, it takes ownership and keeps it alive.
+Our pipeline must support both cases. The helper class template ref_or_owned manages objects regardless of whether they are borrowed or owned. For a borrowed object, it stores a reference, and for an owned object, it takes ownership and keeps it alive.
 
-> **Developer Note:** This implementation uses `std::shared_ptr` for both message passing and chain elements to maximize flexibility in a shared ownership model. If strict zero-cost abstraction is required, developers could adapt this pattern to utilize `std::unique_ptr` where exclusive ownership is guaranteed.
+Developer Note: This implementation uses std::shared_ptr for both message passing and chain elements to maximize flexibility in a shared ownership model. If strict zero-cost abstraction is required, developers could adapt this pattern to utilize std::unique_ptr where exclusive ownership is guaranteed.
 
-## Coupling Elements and Overloading the Pipe Operator in C++
+Coupling Elements and Overloading the Pipe Operator in C++
+We define the structure for a basic parsing engine that inherits the properties of a ChainElement. Its purpose is to couple two chain elements: lhs (left-side element of the processing chain) and rhs (right-side element).
 
-We define the structure for a basic parsing engine that inherits the properties of a `ChainElement`. Its purpose is to couple two chain elements: `lhs` (left-side element of the processing chain) and `rhs` (right-side element).
-
-For example, `parser 1 | parser 2` means that the output of parser 1 will be fed to parser 2 for further processing.
-
-```cpp
+For example, parser 1 | parser 2 means that the output of parser 1 will be fed to parser 2 for further processing.
 // Shared object pointer
 using Element = std::shared_ptr<ChainElement>;
 
@@ -213,13 +180,9 @@ struct ParsingChain : ChainElement {
     return lhs.get().process(msg, lhs_cb);
   }
 };
-```
-
 Beyond handling chain elements in its constructor, this structure facilitates the processing and routing of elements from one stage to another.
 
-We then make use of the `|` operator to perform the chaining and execute the pipeline once it is complete:
-
-```cpp
+We then make use of the | operator to perform the chaining and execute the pipeline once it is complete:
 Element operator|(Element a, Element b) {
   return std::make_shared<ParsingChain>(a, b);
 }
@@ -240,39 +203,13 @@ ParsingChain operator|(ref_or_owned<ChainElement> a,
 
   return chain;
 }
-```
+The third overload of the | operator checks if the pipeline has both generator and leaf nodes. If affirmative, it automatically starts execution.
 
-The third overload of the `|` operator checks if the pipeline has both generator and leaf nodes. If affirmative, it automatically starts execution.
-
-## Executing the C++ Pipeline Chain
-
+Executing the C++ Pipeline Chain
 The implementation can be tested via the following program:
-
-```cpp
-int main() {
-  SimpleParser parser;
-  TextFilter filter;
-  TextExporter exporter;
-  // auto chain = parser | filter | exporter;
-
-  // chain.process(std::make_shared<StartMessage>(),
-  //               [](Msg) { return Continue::Yes; });
-
-  auto chain = std::make_shared<SimpleParser>() |
-               std::make_shared<TextFilter>() |
-               std::make_shared<TextExporter>();
-
-  MessageCallbacks root{[](Msg) { return Continue::Yes; },
-                        [](Msg) { return Continue::Yes; }};
-
-  chain->process(std::make_shared<StartMessage>(), root);
-}
-```
-
-## A Note on Concurrency
-
+A Note on Concurrency
 One of the hidden benefits of this message-passing architecture is how naturally it lends itself to multithreading. Because each node operates independently on the messages it receives, this pattern lays the groundwork to run individual elements on separate threads, passing messages via concurrent, thread-safe queues.
 
-*The actual Docwire implementation of this feature can be found in the Docwire source repository under the `src/parsing_chain.h` and `src/parsing_chain.cpp` files.*
+The actual Docwire implementation of this feature can be found in the Docwire source repository under the src/parsing_chain.h and src/parsing_chain.cpp files.
 
 <iframe src={"https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"} width="100%" height="300" frameBorder={0} marginHeight={0} marginWidth={0} title="DocWire Engineering Updates" />
