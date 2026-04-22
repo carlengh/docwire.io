@@ -1,8 +1,9 @@
 ---
 title: Building Unix-Style C++ Processing Pipelines Using the Pipe Operator
-authors: reeshabh
 tags: ["cpp", "pipeline", "parsing", "sdk"]
 ---
+
+**By Reeshabh Choudhary, DocWire.io**
 
 **Summary:** How to build a C++ processing pipeline using the pipe operator (`|`). To build a C++ processing pipeline using the pipe operator, you must define a base chain element class with virtual processing methods and overload the bitwise OR operator to couple these elements together. This object-oriented approach ensures that the output of one processing node seamlessly feeds into the next, closely mimicking the behavior of Unix terminal pipes.
 
@@ -274,4 +275,4 @@ One of the hidden benefits of this message-passing architecture is how naturally
 
 *The actual Docwire implementation of this feature can be found in the Docwire source repository under the `src/parsing_chain.h` and `src/parsing_chain.cpp` files.*
 
-<iframe src={"https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"} width="100%" height="300" frameBorder={0} marginHeight={0} marginWidth={0} title="DocWire Engineering Updates"></iframe>
+<iframe src={"https://tally.so/embed/0QjA2Z?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"} width="100%" height="300" frameBorder={0} marginHeight={0} marginWidth={0} title="DocWire Engineering Updates" />
